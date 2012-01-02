@@ -8,7 +8,7 @@
   Add samples to an existing chain produced by \code{MCMC} or \code{MCMC.parallel}.
 }
 \usage{
-MCMC.add.samples(MCMC.object, n.update, verbose = 100, ...)
+MCMC.add.samples(MCMC.object, n.update, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,9 +17,6 @@ MCMC.add.samples(MCMC.object, n.update, verbose = 100, ...)
   }
   \item{n.update}{
     number of additional samples.
-  }
-  \item{verbose}{
-    every \code{verbose}-th iteration is printed.
   }
   \item{\dots}{
     further arguments passed to \code{p}.

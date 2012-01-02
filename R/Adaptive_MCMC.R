@@ -9,12 +9,12 @@
 ## (Accessed December 8, 2011).
 
 ##
-## December 9, 2011 -- Andreas Scheidegger
+## December 23, 2011 -- Andreas Scheidegger
 ## =======================================================
 
 
 MCMC <- function(p, n, init, scale=rep(1, length(init)), log=TRUE,
-                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.55, list=TRUE, verbose=100, n.start=0, ...) {
+                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.55, list=TRUE, n.start=0, ...) {
 
   ## checks
   if(adapt & !is.numeric(acc.rate)) stop('Argument "acc.rate" is missing!')
@@ -47,10 +47,16 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)), log=TRUE,
   if(ncol(M) != length(init)) stop("Length or dimension of 'init' and 'scale' do not match!")
   S <-  t(chol(M))
 
+  ## initialize progress bar
+  cat('  generate', n, 'samples \n')
+  pb <- txtProgressBar(min=0, max=n, style=3)
+  update.step <- max(5, floor(n/100))
+
   k <- 0
   for(i in 2:n){
-    if(i %% verbose == 0) {
-      cat('iteration', i, 'of', n, '\n')
+
+    if(i %% update.step == 0) {
+      setTxtProgressBar(pb, i)
     }
 
     ## proposal value
@@ -81,7 +87,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)), log=TRUE,
     ## compute new S
     ii <- i+n.start
     if(ii < n.adapt) {
-      adapt.rate <-  min(1, d*ii^(-gamma))
+      adapt.rate <-  min(5, d*ii^(-gamma))
       M <- S %*% (diag(d) + adapt.rate*(alpha - acc.rate) * U%*%t(U)/sqrt(sum(U^2))) %*% t(S)
 
       ## check if M is positive definite. If not, use nearPD().
@@ -98,20 +104,22 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)), log=TRUE,
     }
   }
 
+  close(pb)                             #close progress bar
+
   ## calculate accpetance rate
   acceptance.rate <- round(k/(n-1), 3)
 
   if(list) {
-      return(list(samples=X,
-                  cov.jump=M,
-                  n.sample=n,
-                  acceptance.rate=acceptance.rate,
-                  adaption=adapt,
-                  sampling.parameters=list(sample.density=p,
-                                          log=log,
-                                          acc.rate=acc.rate,
-                                          gamma=gamma)
-                  ) )
+    return(list(samples=X,
+                cov.jump=M,
+                n.sample=n,
+                acceptance.rate=acceptance.rate,
+                adaption=adapt,
+                sampling.parameters=list(sample.density=p,
+                  log=log,
+                  acc.rate=acc.rate,
+                  gamma=gamma)
+                ) )
   } else {
     cat("Acceptance rate:", acceptance.rate, "\n")
     return(X)
@@ -119,13 +127,12 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)), log=TRUE,
 }
 
 
-
 ## ----------------------
-## add more samples to an existing chain
+## Adds more samples to an existing chain
 ## does work with objet generated with MCMC.parallel()
 ## but updating is not computed  parallel.
 
-MCMC.add.samples <- function(MCMC.object, n.update, verbose=100, ...) {
+MCMC.add.samples <- function(MCMC.object, n.update, ...) {
 
     ## if single chain
     if(!is.null(names(MCMC.object))) {
@@ -143,7 +150,7 @@ MCMC.add.samples <- function(MCMC.object, n.update, verbose=100, ...) {
 
         ## generate new samples
         samp.update <- MCMC(p=p, n=n.update, init=init, scale=scale, log=log,  adapt=adapt, acc.rate=acc.rate,
-                            gamma=gamma, list=TRUE, verbose=verbose, n.start=n.before, ...)
+                            gamma=gamma, list=TRUE, n.start=n.before, ...)
 
         ## update old sampling object
         MCMC.object$cov.jump <- samp.update$cov.jump
@@ -165,47 +172,92 @@ MCMC.add.samples <- function(MCMC.object, n.update, verbose=100, ...) {
     }
 }
 
-
 ## ----------------------
-## parallel version
-MCMC.parallel <- function(p, n, init, n.chain=4, n.cpu=2, packages=NULL, scale=rep(1, length(init)), log=TRUE,
-                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.55, list=FALSE, parallel=TRUE, verbose=100, ...) {
+## Wrapper for parallel calculation of independent chains
+MCMC.parallel <- function(p, n, init, n.chain=4, n.cpu, packages=NULL, dyn.libs=NULL, scale=rep(1, length(init)),
+                          log=TRUE, adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.55, list=FALSE, ...) {
 
-  require(snowfall)
+  require(parallel)
 
   ## initialisation of (local) parallel computing
-  sfInit(parallel=parallel, cpus=min(n.chain, n.cpu), type="SOCK")
+  cl <- makeCluster(min(n.cpu, detectCores()))
 
   ## stop parallel computing on exit
-  on.exit(sfStop())
+  on.exit({ stopCluster(cl); print("Cluster stopped.")})
 
   ## export complete work space of master
-  sfExportAll()
-
-  ## exports library
-  sfLibrary("Matrix", character.only=TRUE)
-
-  ## load additional packages
-  if(!is.null(packages)) {
-      sapply(packages, function(x) sfLibrary(x, character.only=TRUE) )
-  }
+  varlist <- unique(c(ls(), ls(envir=.GlobalEnv), ls(envir=parent.env(environment()))))
+  clusterExport(cl, varlist=varlist, envir=environment())
 
   ## init random generators
-  sfClusterSetupRNG()
+  clusterSetRNGStream(cl)
 
-  ## wrapper
+  ## export 'packages', 'dyn.libs', and current working directory
+  wd <- getwd()
+  clusterExport(cl, varlist=c("packages", "dyn.libs", "wd"), envir=environment())
+
+  ## wrapper function to be called in parallel
   MCMC.wrap <- function(x, ...) {
+      require(Matrix)
+      if(!is.null(packages)) sapply(packages, function(x) require(x, character.only=TRUE))
+      ## load and unload dynamic libraries
+      if (!is.null(dyn.libs)) {
+          sapply(dyn.libs, function(x) dyn.load(paste(wd, x, sep = "/")))
+          on.exit( sapply(dyn.libs, function(x) dyn.unload(paste(wd, x, sep = "/"))) )
+      }
       MCMC(...)
   }
 
-  ## sample n.chin in parallel
-  result <- sfLapply(1:n.chain, MCMC.wrap, p=p, n=n, init=init,
-                        scale=scale, log=log, adapt=adapt, acc.rate=acc.rate,
-                        gamma=gamma, list=list, verbose=verbose, ...)
 
+  ## sample n chains in parallel
+  result <- clusterApply(cl, 1:n.chain, MCMC.wrap, p=p, n=n, init=init,
+                        scale=scale, log=log, adapt=adapt, acc.rate=acc.rate,
+                        gamma=gamma, list=list, ...)
 
   return(result)
+
 }
+
+## ## ----------------------
+## ## parallel version
+## MCMC.parallel <- function(p, n, init, n.chain=4, n.cpu=2, packages=NULL, scale=rep(1, length(init)), log=TRUE,
+##                  adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.55, list=FALSE, parallel=TRUE, ...) {
+
+##   require(snowfall)
+
+##   ## initialisation of (local) parallel computing
+##   sfInit(parallel=parallel, cpus=min(n.chain, n.cpu), type="SOCK")
+
+##   ## stop parallel computing on exit
+##   on.exit(sfStop())
+
+##   ## export complete work space of master
+##   sfExportAll()
+
+##   ## exports library
+##   sfLibrary("Matrix", character.only=TRUE)
+
+##   ## load additional packages
+##   if(!is.null(packages)) {
+##       sapply(packages, function(x) sfLibrary(x, character.only=TRUE) )
+##   }
+
+##   ## init random generators
+##   sfClusterSetupRNG()
+
+##   ## wrapper
+##   MCMC.wrap <- function(x, ...) {
+##       MCMC(...)
+##   }
+
+##   ## sample n.chin in parallel
+##   result <- sfLapply(1:n.chain, MCMC.wrap, p=p, n=n, init=init,
+##                         scale=scale, log=log, adapt=adapt, acc.rate=acc.rate,
+##                         gamma=gamma, list=list, ...)
+
+
+##   return(result)
+## }
 
 
 

@@ -1,6 +1,5 @@
 \name{MCMC}
 \alias{MCMC}
-%- Also NEED an '\alias' for EACH other topic documented here.
 
 \title{
 (Adaptive) Metropolis Sampler
@@ -13,9 +12,8 @@ Implementation of the robust adaptive Metropolis sampler of Vihola (2011).
 \usage{
 MCMC(p, n, init, scale = rep(1, length(init)), log = TRUE,
     adapt = !is.null(acc.rate), acc.rate = NULL, gamma = 0.55,
-    list = TRUE, verbose = 100, n.start = 0, ...)
+    list = TRUE, n.start = 0, ...)
 }
-%- maybe also 'usage' for other objects documented here.
 
 \arguments{
   \item{p}{
@@ -46,9 +44,6 @@ desired acceptance rate (ignored if \code{adapt=FALSE})
 }
   \item{list}{
 logical. If \code{TRUE} a list is returned otherwise only a matrix with the samples.
-}
-  \item{verbose}{
-every \code{verbose}-th iteration is printed.
 }
   \item{n.start}{
 iteration where the adaption starts. Only internally used.
@@ -95,12 +90,10 @@ coerced acceptance rate. Statistics and Computing.
 \email{scheidegger.a@gmail.com}}
 
 \note{ Due to numerical errors it can happen that the computed
-covariance matrix is not positive definite. In such a case the function \code{nearPD()}
-of the package \pkg{Matrix} is used to calculate the nearest positive
-definit matrix.
+covariance matrix is not positive definite. In such a case the nearest positive
+definite matrix is calculated with \code{nearPD()}
+of the package \pkg{Matrix}.
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 \code{\link{MCMC.parallel}}, \code{\link{MCMC.add.samples}}
@@ -155,7 +148,4 @@ contour(x1, x2, exp(d.banana), add=TRUE, col=gray(0.6))
 lines(samp.2$samples, type='b', pch=3)
 }
 
-
-%keywords, see file 'KEYWORDS' in the R documentation directory.
-%\keyword{multivariate}
 

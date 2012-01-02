@@ -5,14 +5,14 @@
 Parallel computation of MCMC()
 }
 \description{
-Several independent Markov chains are generated in parallel by using the
-\pkg{snowfall} package.
+A wrapper function to generate several independent Markov chains by
+stetting up cluster on a multi-core machine. The function is
+based on the \pkg{parallel} package.
 }
 \usage{
-MCMC.parallel(p, n, init, n.chain = 4, n.cpu = 2, packages = NULL,
+MCMC.parallel(p, n, init, n.chain = 4, n.cpu, packages = NULL, dyn.libs=NULL,
     scale = rep(1, length(init)), log = TRUE, adapt = !is.null(acc.rate),
-    acc.rate = NULL, gamma = 0.55, list = FALSE, parallel = TRUE,
-    verbose = 100, ...)
+    acc.rate = NULL, gamma = 0.55, list = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,11 +29,15 @@ vector with initial values.
 number of independent chains.
 }
   \item{n.cpu}{
-number of CPUs that can be used in parallel
+number of CPUs that should be used in parallel.
 }
   \item{packages}{
     vector with name of packages to load into each instance. (Typically,
     all packages on which \code{p} depends.)
+  }
+  \item{dyn.libs}{
+    vector with name of dynamic link libraries (shared objects) to load into each
+    instance. The libraries must be located in the working directory.
 }
   \item{scale}{
 vector with the variances \emph{or} covariance matrix of the jump distribution.
@@ -55,12 +59,6 @@ desired acceptance rate (ignored if \code{adapt=FALSE})
   \item{list}{
 logical. If \code{TRUE} a list of lits is returned otherwise a list of matrices with the samples.
 }
-\item{parallel}{
-  logical. Should the chains be calculated in parallel?
-}
-  \item{verbose}{
-every \code{verbose}th iteration is printed.
-}
   \item{\dots}{
     further arguments passed to \code{p}
 }
@@ -69,7 +67,8 @@ every \code{verbose}th iteration is printed.
 
 \details{
 This function is just a wrapper to use \code{MCMC} in parallel. It is
-based on \pkg{snowfall}.
+based on \pkg{parallel}. Obviously, the application of this function
+makes only sense on a multi-core machine.
 }
 \value{
 A list with a list or matrix for each chain. See \code{\link{MCMC}} for details.
@@ -95,7 +94,7 @@ p.log <- function(x) {
 
 ## ----------------------
 ## generate samples
-## compute 4 independent chains on 2 CPU's in parallel
+## compute 4 independent chains on 2 CPU's (if available) in parallel
 
 samp <- MCMC.parallel(p.log, n=200, init=c(x1=0, x2=1),
     n.chain=4, n.cpu=2, scale=c(1, 0.1),

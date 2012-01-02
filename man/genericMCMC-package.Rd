@@ -13,8 +13,8 @@ Carlo Markov chain sampler proposed by Vihola (2011).
 \tabular{ll}{
 Package: \tab adaptMCMC\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2011-12-09\cr
+Version: \tab 1.0.2\cr
+Date: \tab 2012-01-03\cr
 License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
 }
@@ -22,7 +22,7 @@ LazyLoad: \tab yes\cr
 The workhorse function is \code{\link{MCMC}}. Chains can be updated with
  \code{\link{MCMC.add.samples}}. \code{\link{MCMC.parallel}} is a
  wrapper to generate independent chains on several CPU's in parallel
- using \pkg{snowfall}. \pkg{coda}-functions can be used after conversion
+ using \pkg{parallel}. \pkg{coda}-functions can be used after conversion
  with \code{\link{convert.to.coda}}.
 }
 
