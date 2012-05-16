@@ -1,6 +1,6 @@
 \name{MCMC.parallel}
 \alias{MCMC.parallel}
-%- Also NEED an '\alias' for EACH other topic documented here.
+
 \title{
 Parallel computation of MCMC()
 }
@@ -11,13 +11,13 @@ based on the \pkg{parallel} package.
 }
 \usage{
 MCMC.parallel(p, n, init, n.chain = 4, n.cpu, packages = NULL, dyn.libs=NULL,
-    scale = rep(1, length(init)), log = TRUE, adapt = !is.null(acc.rate),
-    acc.rate = NULL, gamma = 0.55, list = FALSE, ...)
+    scale = rep(1, length(init)),  adapt = !is.null(acc.rate),
+    acc.rate = NULL, gamma = 0.55, list = TRUE, ...)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{p}{
-function that returns the (log) probability density to sample from. Must have two or more dimensions.
+function that returns the log probability density to sample from. Must have two or more dimensions.
 }
   \item{n}{
 number of samples.
@@ -42,10 +42,7 @@ number of CPUs that should be used in parallel.
   \item{scale}{
 vector with the variances \emph{or} covariance matrix of the jump distribution.
 }
-  \item{log}{
-logical. If \code{TRUE}, a log density is expected from \code{p} (strongly recommended).
-}
-  \item{adapt}{
+\item{adapt}{
  if \code{TRUE}, adaptive sampling is used, if \code{FALSE} classic metropolis
  sampling, if a positive integer the adaption stops after \code{adapt} iterations.
 }

@@ -1,8 +1,8 @@
-4a2b0425540ea7d8f1bddd40841292a0 *DESCRIPTION
+f6845671795c4fbec4112a741dab598a *DESCRIPTION
 ee7c5cab931208f02fbf1b9c686e972a *NAMESPACE
-f48ea31ffc55526ee7a50813ab35a29e *R/Adaptive_MCMC.R
-8bced93b507ff929363638dff4a4966c *man/MCMC.Rd
+65c812982ab36c7e5c6c24d999e3fc8b *R/Adaptive_MCMC.R
+733db7cdbddf77fb63e1b671818c4fd0 *man/MCMC.Rd
 6f7e65c416d9ba8eff5693e47daab947 *man/MCMC.add.samples.Rd
-59a81a68bfb4d2187913394c82662960 *man/MCMC.parallel.Rd
+47ad6792245a051a21b597c1ea2d4c4d *man/MCMC.parallel.Rd
 ed75865b39802af89ceb83e707985b2b *man/convert.to.coda.Rd
-23a091ceb8345091250f00faedc51d79 *man/genericMCMC-package.Rd
+fc00154d67a13a2b618dc79e3b97e22d *man/genericMCMC-package.Rd

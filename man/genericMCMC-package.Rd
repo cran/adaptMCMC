@@ -40,6 +40,9 @@ coerced acceptance rate. Statistics and Computing.
 \code{\link{MCMC}}, \code{\link{MCMC.add.samples}},
 \code{\link{MCMC.parallel}}, \code{\link{convert.to.coda}}
 
+  The package \code{HI} provides an adaptive rejection Metropolis sampler
+  with the function \code{\link[HI]{arms}}. See also
+  \code{\link[MHadaptive]{Metro_Hastings}} of the \code{MHadaptive} package.
 }
 % \examples{
 % ##
