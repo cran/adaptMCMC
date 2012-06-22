@@ -8,14 +8,14 @@
 ## [online] http://www.springerlink.com/content/672270222w79h431/
 ## (Accessed December 8, 2011).
 
-## Version 1.0.3
+## Version 1.1
 
-## May 16, 2012 -- Andreas Scheidegger
+## June 22, 2012 -- Andreas Scheidegger
 ## =======================================================
 
 
 MCMC <- function(p, n, init, scale=rep(1, length(init)),
-                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.55, list=TRUE, n.start=0, ...) {
+                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.5, list=TRUE, n.start=0, ...) {
 
   ## checks
   if(adapt & !is.numeric(acc.rate)) stop('Argument "acc.rate" is missing!')
@@ -46,6 +46,8 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
   }
   ## check
   if(ncol(M) != length(init)) stop("Length or dimension of 'init' and 'scale' do not match!")
+  if(length(init)==1) stop('One-dimensional sampling is not possible!')
+
   S <-  t(chol(M))
 
   ## initialize progress bar
@@ -63,6 +65,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
     ## proposal value
     U <- rnorm(d)
     X.prop <- c( X[i-1,] + S %*% U )
+    names(X.prop) <- names(init)
 
     ## calculate density at X.prop
     p.val.prop <- p(X.prop, ...)
@@ -86,7 +89,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
     ii <- i+n.start
     if(ii < n.adapt) {
       adapt.rate <-  min(5, d*ii^(-gamma))
-      M <- S %*% (diag(d) + adapt.rate*(alpha - acc.rate) * U%*%t(U)/sqrt(sum(U^2))) %*% t(S)
+      M <- S %*% (diag(d) + adapt.rate*(alpha - acc.rate) * U%*%t(U)/sum(U^2)) %*% t(S)
 
       ## check if M is positive definite. If not, use nearPD().
       eig <- eigen(M, only.values = TRUE)$values
