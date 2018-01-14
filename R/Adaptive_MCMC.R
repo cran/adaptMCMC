@@ -8,19 +8,17 @@
 ## [online] http://www.springerlink.com/content/672270222w79h431/
 ## (Accessed December 8, 2011).
 
-## Version 1.1.3
-
-## June 21, 2017 -- Andreas Scheidegger
+## January 11, 2018 -- Andreas Scheidegger
 ## =======================================================
 
 
 MCMC <- function(p, n, init, scale=rep(1, length(init)),
-                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=0.5, list=TRUE,
+                 adapt=!is.null(acc.rate), acc.rate=NULL, gamma=2/3, list=TRUE,
                  showProgressBar=interactive(), n.start=0, ...) {
 
   ## checks
   if(adapt & !is.numeric(acc.rate)) stop('Argument "acc.rate" is missing!')
-  if(gamma<0.5 | gamma>1) stop('Argument "gamma" must be between 0.5 and 1!')
+  if(gamma<=0.5 | gamma>1) stop('Argument "gamma" must be in (0.5, 1]!')
 
 
   ## number of adaption steps
@@ -46,14 +44,14 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
     if(!"log.density" %in% names(val)) {
       stop("The list returned by 'p' must contain an element named 'log.density!'")
     }
-    if(length(val$log.density)>1) warning("The 'log.density' does not return a scalar value! Only the first element is used. This will be treated as an error in future versions!")
+    if(length(val$log.density)>1) stop("The list element 'log.density' must be a scalar value!")
     
     p.val[1] <- val$log.density
     extras[[1]] <- val["log.density" != names(val)]
     
   } else {
     returns.list <- FALSE
-    if(length(val)>1) warning("The 'log.density' does not return a scalar value! Only the first element is used. This will be treated as an error in future versions!")
+    if(length(val)>1) stop("The function 'p' must return a scalar value or a named list! See ?MCMC.!")
     p.val[1] <- val
   }
 
@@ -88,7 +86,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
     }
 
     ## proposal value
-    U <- rnorm(d)
+    U <- rt(d, df=d)
     X.prop <- c( X[i-1,] + S %*% U )
     names(X.prop) <- names(init)
 
@@ -125,7 +123,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
     ## compute new S
     ii <- i+n.start
     if(ii < n.adapt) {
-      adapt.rate <-  min(5, d*ii^(-gamma))
+      adapt.rate <-  min(1, d*ii^(-gamma))
       M <- S %*% (diag(d) + adapt.rate*(alpha - acc.rate) * U%*%t(U)/sum(U^2)) %*% t(S)
 
       ## check if M is positive definite. If not, use nearPD().
@@ -143,7 +141,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
   }
 
   if(showProgressBar){
-    close(pb)                             #close progress bar
+    close(pb)                             # close progress bar
   }
   
   ## calculate accpetance rate
@@ -223,7 +221,7 @@ MCMC.add.samples <- function(MCMC.object, n.update, ...) {
 ## Wrapper for parallel calculation of independent chains
 MCMC.parallel <- function(p, n, init, n.chain=4, n.cpu, packages=NULL, dyn.libs=NULL,
                           scale=rep(1, length(init)), adapt=!is.null(acc.rate),
-                          acc.rate=NULL, gamma=0.5, list=TRUE, ...) {
+                          acc.rate=NULL, gamma=2/3, list=TRUE, ...) {
 
   ## initialisation of (local) parallel computing
   cl <- makeCluster(min(n.cpu, detectCores()))
