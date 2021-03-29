@@ -8,7 +8,9 @@
 ## [online] http://www.springerlink.com/content/672270222w79h431/
 ## (Accessed December 8, 2011).
 
-## January 11, 2018 -- Andreas Scheidegger
+## Version 1.1.3
+
+## June 21, 2017 -- Andreas Scheidegger
 ## =======================================================
 
 
@@ -123,19 +125,9 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
     ## compute new S
     ii <- i+n.start
     if(ii < n.adapt) {
-      adapt.rate <-  min(1, d*ii^(-gamma))
-      M <- S %*% (diag(d) + adapt.rate*(alpha - acc.rate) * U%*%t(U)/sum(U^2)) %*% t(S)
-
-      ## check if M is positive definite. If not, use nearPD().
-      eig <- eigen(M, only.values = TRUE)$values
-      tol <- ncol(M)*max(abs(eig))*.Machine$double.eps
-
-      if( !isSymmetric(M) | is.complex(eig) | !all(Re(eig)>tol) ){
-        ## nearPD() computes the 'nearest' positive definite matrix
-        M <- as.matrix(Matrix::nearPD(M)$mat)
-      }
-
-      S <- t(chol(M))
+      
+      ## ramcmc package performs rank 1 cholesky update/downdate as required
+      S <- ramcmc::adapt_S(S, U, alpha, ii, acc.rate, gamma)
 
     }
   }
@@ -150,7 +142,7 @@ MCMC <- function(p, n, init, scale=rep(1, length(init)),
   if(list) {
     res <- list(samples=X,
                 log.p=p.val,
-                cov.jump=M,
+                cov.jump=S %*% t(S),
                 n.sample=n,
                 acceptance.rate=acceptance.rate,
                 adaption=adapt,
